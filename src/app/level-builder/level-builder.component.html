@@ -1,0 +1,55 @@
+<div class="level-builder">
+
+    <div class="toolbar"
+         [formGroup]="toolbarForm">
+
+        <button (click)="uploadImage.click()">
+            Upload image
+        </button>
+
+        <div class="controls-wrapper">
+            <label>Image Size</label>
+            <div class="controls-bundle">
+                <input type="number"
+                       formControlName="width">
+                <span>
+                    x
+                </span>
+                <input type="number"
+                       formControlName="height">
+            </div>
+        </div>
+
+        <label for="isBundle">
+            <input type="checkbox"
+                   id="isBundle"
+                   formControlName="isBundle">
+            Is Bundle
+        </label>
+
+        <div *ngIf="isBundle.value"
+             class="controls-wrapper">
+            <label>Bundle Size</label>
+            <div class="controls-bundle">
+                <input type="number"
+                       formControlName="bundleSizeWidth">
+                <span>
+                    x
+                </span>
+                <input type="number"
+                       formControlName="bundleSizeHeight">
+            </div>
+        </div>
+    </div>
+
+    <div class="preview">
+        <img [src]="outputImg"
+             [style.width.px]="width.value * 2"
+             [style.height.px]="height.value * 2">
+    </div>
+</div>
+
+<input type="file"
+       hidden
+       #uploadImage
+       (change)="uploadFile($event)">

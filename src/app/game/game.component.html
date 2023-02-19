@@ -1,0 +1,36 @@
+<div class="board-wrapper"
+     (mouseup)="stopDrawingShape()"
+     (mousemove)="onAdjusShape($event)">
+    <div class="toolbar">
+        <div class="toolbar__action"
+             [class.active]="inputType === InputType.Fill"
+             (click)="inputType = InputType.Fill">
+            <img src="assets/icons/pencil.svg"
+                 draggable="false">
+        </div>
+        <div class="toolbar__action"
+             [class.active]="inputType === InputType.Empty"
+             (click)="inputType = InputType.Empty">
+            <img src="assets/icons/x.svg"
+                 draggable="false">
+        </div>
+    </div>
+
+    <div class="board">
+        <div *ngFor="let row of board; let iRow = index"
+             class="board__row">
+            <div *ngFor="let tile of row; let iTile = index"
+                 class="board__tile"
+                 [id]="iRow + ';' + iTile"
+                 [ngClass]="{
+                    'filled': tile.isFilled,
+                    'empty': tile.isEmpty,
+                    'preview': tile.isPreview,
+                    'error': tile.isError
+                 }"
+                 [draggable]="false"
+                 (mousedown)="startDrawingShape($event, tile)">
+            </div>
+        </div>
+    </div>
+</div>
