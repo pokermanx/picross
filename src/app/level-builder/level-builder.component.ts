@@ -1,14 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
-import { debounceTime, merge, mergeMap, zip } from 'rxjs';
+import { chunk } from 'lodash-es';
+import { debounceTime, merge } from 'rxjs';
 
 @Component({
   selector: 'level-builder',
   templateUrl: './level-builder.component.html',
-  styleUrls: ['./level-builder.component.scss']
+  styleUrls: ['./level-builder.component.scss'],
 })
 export class LevelBuilder {
-
   outputImg: any;
   file: any;
 
@@ -32,7 +32,11 @@ export class LevelBuilder {
     return this.toolbarForm.get('bundleSizeHeight') as FormControl;
   }
 
-  constructor(private fb: FormBuilder) { this.createForm(); }
+  @ViewChild('canvasPreview', { static: true }) canvasPreview?: ElementRef<any>;
+
+  constructor(private fb: FormBuilder) {
+    this.createForm();
+  }
 
   uploadFile($event: Event) {
     // @ts-ignore
@@ -42,9 +46,7 @@ export class LevelBuilder {
     this.generateLevelPreview();
   }
 
-  private handleBundle() {
-
-  }
+  private handleBundle() {}
 
   private generateLevelPreview() {
     if (!(this.file && this.width.value && this.height.value)) {
@@ -60,19 +62,19 @@ export class LevelBuilder {
 
       // ChatGPT helped me with this piece :)
 
-      const canvas = document.createElement("canvas");
+      // UPD: okay it was far from perfect but at least the conversion to pixels works fine
+
+      const canvas = document.createElement('canvas');
       canvas.width = outputWidth;
       canvas.height = outputHeight;
 
-      // Draw the image to the canvas with the specified size
       // @ts-ignore
-      const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
+      const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
 
       // Get the pixel data from the canvas
       const pixelData = ctx.getImageData(0, 0, outputWidth, outputHeight).data;
-
       // Loop through the pixel data and set each pixel to either black or white
       for (let i = 0; i < pixelData.length; i += 4) {
         const r = pixelData[i];
@@ -83,17 +85,35 @@ export class LevelBuilder {
         pixelData[i] = pixelData[i + 1] = pixelData[i + 2] = pixelValue;
         pixelData[i + 3] = 255; // Set alpha to 255
       }
-      // Create a new image object with the pixel data and return it
+
+      const chunked = chunk(pixelData, 4);
+
+      const imageMap: any[] = [];
+
+      for (let i = 0; i < chunked.length; i++) {
+        const iRow = ~~(i / outputWidth);
+        const tileData = chunked[i][0] === 0 ? 1 : 0;
+        if (!imageMap[iRow]) {
+          imageMap[iRow] = [tileData];
+        } else {
+          imageMap[iRow].push(tileData);
+        }
+      }
+
+      console.log(imageMap)
+
       const outputImg = new ImageData(pixelData, outputWidth, outputHeight);
 
-      const canvas2 = document.createElement("canvas");
-      canvas2.width = outputImg.width;
-      canvas2.height = outputImg.height;
-      // @ts-ignore
-      const context: CanvasRenderingContext2D = canvas2.getContext("2d");
-      context.putImageData(outputImg, 0, 0);
+      const canvasPreview = this.canvasPreview?.nativeElement;
 
-      this.outputImg = canvas2.toDataURL();
+      canvasPreview.width = outputWidth;
+      canvasPreview.height = outputHeight;
+
+      // @ts-ignore
+      const context: CanvasRenderingContext2D = canvasPreview.getContext("2d");
+      context.imageSmoothingEnabled = false;
+
+      context.putImageData(outputImg, 0, 0);
     };
   }
 
@@ -107,21 +127,13 @@ export class LevelBuilder {
       bundleSizeHeight: new FormControl(0),
     });
 
-
-    merge(
-      this.width.valueChanges,
-      this.height.valueChanges
-    )
+    merge(this.width.valueChanges, this.height.valueChanges)
       .pipe(debounceTime(800))
       .subscribe(() => this.generateLevelPreview());
 
-    this.isBundle.valueChanges
-      .subscribe(() => this.handleBundle())
+    this.isBundle.valueChanges.subscribe(() => this.handleBundle());
 
-    merge(
-      this.bundleSizeWidth.valueChanges,
-      this.bundleSizeHeight.valueChanges
-    )
+    merge(this.bundleSizeWidth.valueChanges, this.bundleSizeHeight.valueChanges)
       .pipe(debounceTime(800))
       .subscribe(() => this.generateLevelPreview());
   }

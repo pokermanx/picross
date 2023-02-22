@@ -1,36 +1,58 @@
-<div class="board-wrapper"
+<div class="game-wrapper"
      (mouseup)="stopDrawingShape()"
      (mousemove)="onAdjusShape($event)">
-    <div class="toolbar">
-        <div class="toolbar__action"
-             [class.active]="inputType === InputType.Fill"
-             (click)="inputType = InputType.Fill">
-            <img src="assets/icons/pencil.svg"
-                 draggable="false">
-        </div>
-        <div class="toolbar__action"
-             [class.active]="inputType === InputType.Empty"
-             (click)="inputType = InputType.Empty">
-            <img src="assets/icons/x.svg"
-                 draggable="false">
-        </div>
-    </div>
+     <div class="toolbar">
+          <div class="toolbar__action"
+               [class.active]="inputType === InputType.Fill"
+               (click)="inputType = InputType.Fill">
+               <img src="assets/icons/pencil.svg"
+                    draggable="false">
+          </div>
+          <div class="toolbar__action"
+               [class.active]="inputType === InputType.Empty"
+               (click)="inputType = InputType.Empty">
+               <img src="assets/icons/x.svg"
+                    draggable="false">
+          </div>
+     </div>
 
-    <div class="board">
-        <div *ngFor="let row of board; let iRow = index"
-             class="board__row">
-            <div *ngFor="let tile of row; let iTile = index"
-                 class="board__tile"
-                 [id]="iRow + ';' + iTile"
-                 [ngClass]="{
-                    'filled': tile.isFilled,
-                    'empty': tile.isEmpty,
-                    'preview': tile.isPreview,
-                    'error': tile.isError
-                 }"
-                 [draggable]="false"
-                 (mousedown)="startDrawingShape($event, tile)">
-            </div>
-        </div>
-    </div>
+     <div class="board-wrapper">
+          <div class="column-annotations">
+               <div *ngFor="let columnAnnotation of boardAnnotation.columns"
+                    class="annotation annotation--column">
+                    <span *ngFor="let number of columnAnnotation"
+                          class="annotation-number"
+                          [class.done]="number.done">
+                         {{ number.value }}
+                    </span>
+               </div>
+          </div>
+          <div class="row-annotations">
+               <div *ngFor="let rowAnnotation of boardAnnotation.rows"
+                    class="annotation annotation--row">
+                    <span *ngFor="let number of rowAnnotation"
+                          class="annotation-number"
+                          [class.done]="number.done">
+                         {{ number.value }}
+                    </span>
+               </div>
+          </div>
+          <div class="board">
+               <div *ngFor="let row of board; let iRow = index"
+                    class="board__row">
+                    <div *ngFor="let tile of row; let iTile = index"
+                         class="board__tile"
+                         [id]="iRow + ';' + iTile"
+                         [ngClass]="{
+                              'filled': tile.isFilled,
+                              'empty': tile.isEmpty,
+                              'preview': tile.isPreview,
+                              'error': tile.isError
+                         }"
+                         [draggable]="false"
+                         (mousedown)="startDrawingShape($event, tile)">
+                    </div>
+               </div>
+          </div>
+     </div>
 </div>
