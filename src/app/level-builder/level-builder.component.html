@@ -3,9 +3,18 @@
     <div class="toolbar"
          [formGroup]="toolbarForm">
 
-        <button (click)="uploadImage.click()">
-            Upload image
-        </button>
+         <div>
+             <button (click)="uploadImage.click()">
+                 Upload image
+             </button>
+
+             <label for="invert">
+                <input type="checkbox"
+                       id="invert"
+                       formControlName="invert">
+                Invert
+            </label>
+         </div>
 
         <div class="controls-wrapper">
             <label>Image Size</label>
