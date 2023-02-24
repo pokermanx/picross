@@ -3,18 +3,18 @@
     <div class="toolbar"
          [formGroup]="toolbarForm">
 
-         <div>
-             <button (click)="uploadImage.click()">
-                 Upload image
-             </button>
+        <div>
+            <button (click)="uploadImage.click()">
+                Upload image
+            </button>
 
-             <label for="invert">
+            <label for="invert">
                 <input type="checkbox"
                        id="invert"
                        formControlName="invert">
                 Invert
             </label>
-         </div>
+        </div>
 
         <div class="controls-wrapper">
             <label>Image Size</label>
@@ -48,6 +48,17 @@
                 <input type="number"
                        formControlName="bundleSizeHeight">
             </div>
+        </div>
+
+        <div *ngIf="generatedLevel"
+             class="controls-wrapper">
+            <label>Level Name</label>
+
+            <input type="text"
+                   formControlName="name">
+            <button (click)="downloadLevel()">
+                Generate
+            </button>
         </div>
     </div>
 

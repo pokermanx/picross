@@ -1,6 +1,5 @@
 import { Component, DoCheck, OnInit } from '@angular/core';
 import { flatMap } from 'lodash-es';
-import * as test from 'src/levels/test.json';
 
 import { InputType } from '../shared/enums/input-type.enum';
 import {
@@ -52,7 +51,7 @@ export class Game implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.levelConfig = test;
+    // this.levelConfig = test;
 
     this.generateBoard();
     this.generateAnnotations();

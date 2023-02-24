@@ -9,13 +9,16 @@ import { debounceTime, merge } from 'rxjs';
   styleUrls: ['./level-builder.component.scss'],
 })
 export class LevelBuilder {
-  outputImg: any;
+  generatedLevel: any;
   file: any;
 
   toolbarForm: FormGroup<any> = new FormGroup({});
 
   get isBundle(): FormControl {
     return this.toolbarForm.get('isBundle') as FormControl;
+  }
+  get name(): FormControl {
+    return this.toolbarForm.get('name') as FormControl;
   }
 
   get invert(): FormControl {
@@ -90,14 +93,14 @@ export class LevelBuilder {
         const g = pixelData[i + 1];
         const b = pixelData[i + 2];
         const grayscale = 0.2126 * r + 0.7152 * g + 0.0722 * b; // Convert to grayscale
-        
+
         let pixelValue;
         if (invert) {
           pixelValue = grayscale < 128 ? 255 : 0;
         } else {
-          pixelValue = grayscale < 128 ? 0 : 255; 
+          pixelValue = grayscale < 128 ? 0 : 255;
         } // Set pixel to either black or white
-        
+
         pixelData[i] = pixelData[i + 1] = pixelData[i + 2] = pixelValue;
         pixelData[i + 3] = 255; // Set alpha to 255
 
@@ -105,12 +108,10 @@ export class LevelBuilder {
           processedData.push(200, 200, 200, 255);
         }
         if (i !== 0 && i % (bundleWidth * singleBoardHeight * 4) === 0) {
-          console.log(i)
-          const horizintalSeparationLine = Array.from({ length: dOutputWidth }, () => [
-            200, 200, 200, 255,
-          ]);
-
-          console.log(horizintalSeparationLine)
+          const horizintalSeparationLine = Array.from(
+            { length: dOutputWidth },
+            () => [200, 200, 200, 255]
+          );
 
           processedData.push(...flatMap(horizintalSeparationLine));
         }
@@ -137,12 +138,38 @@ export class LevelBuilder {
         }
       }
 
-      console.log(imageMap);
+      const numRows = this.bundleSizeWidth.value;
+      const numCols = this.bundleSizeHeight.value;
 
-      console.log(processedData);
-      console.log(pixelData);
+      const levelMap = [];
 
-      console.log(dOutputWidth, dOutputHeight);
+      const subMatrixRows = imageMap.length / numRows;
+      const subMatrixCols = imageMap[0].length / numCols;
+
+      for (let i = 0; i < numRows; i++) {
+        for (let j = 0; j < numCols; j++) {
+          const subMatrix = [];
+          for (let k = i * subMatrixRows; k < (i + 1) * subMatrixRows; k++) {
+            const subMatrixRow = [];
+            for (let l = j * subMatrixCols; l < (j + 1) * subMatrixCols; l++) {
+              subMatrixRow.push(imageMap[k][l]);
+            }
+            subMatrix.push(subMatrixRow);
+          }
+          levelMap.push(subMatrix);
+        }
+      }
+
+      this.generatedLevel = {
+        levelMap,
+        bundleWidth: this.bundleSizeWidth.value,
+        bundleHeight: this.bundleSizeHeight.value,
+        boardWidth: this.width.value,
+        boardHeight: this.height.value,
+      };
+
+      console.log(this.generatedLevel)
+
       const outputImg = new ImageData(
         new Uint8ClampedArray(processedData),
         dOutputWidth,
@@ -164,6 +191,8 @@ export class LevelBuilder {
 
   private createForm(): void {
     this.toolbarForm = this.fb.group({
+      name: new FormControl(''),
+
       width: new FormControl(10),
       height: new FormControl(10),
 
@@ -173,7 +202,11 @@ export class LevelBuilder {
       bundleSizeHeight: new FormControl(2),
     });
 
-    merge(this.width.valueChanges, this.height.valueChanges, this.invert.valueChanges)
+    merge(
+      this.width.valueChanges,
+      this.height.valueChanges,
+      this.invert.valueChanges
+    )
       .pipe(debounceTime(800))
       .subscribe(() => this.generateLevelPreview());
 
@@ -182,5 +215,20 @@ export class LevelBuilder {
     merge(this.bundleSizeWidth.valueChanges, this.bundleSizeHeight.valueChanges)
       .pipe(debounceTime(800))
       .subscribe(() => this.generateLevelPreview());
+  }
+
+  downloadLevel() {
+    var dataStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify({
+        name: this.name.value,
+        ...this.generatedLevel,
+      }));
+    var downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute('href', dataStr);
+    downloadAnchorNode.setAttribute('download', (this.name.value || 'custom-level') + '.json');
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
   }
 }
