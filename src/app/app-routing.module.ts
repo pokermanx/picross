@@ -7,7 +7,12 @@ import { MenuComponent } from './menu/menu.component';
 
 const routes: Routes = [
   {
-    path: 'game',
+    path: 'game/:levelFile',
+    pathMatch: 'full',
+    redirectTo: '/game/:levelFile/0'
+  },
+  {
+    path: 'game/:levelFile/:levelStage',
     component: Game
   },
   {

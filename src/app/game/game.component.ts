@@ -1,14 +1,13 @@
-import { Component, DoCheck, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { flatMap } from 'lodash-es';
 
 import { InputType } from '../shared/enums/input-type.enum';
-import {
-  AnnotationNumber,
-  BoardAnnotation,
-} from '../shared/models/annotation.model';
+import { AnnotationNumber, BoardAnnotation } from '../shared/models/annotation.model';
 import { Coords } from '../shared/models/coords.model';
-import { LevelConfig } from '../shared/models/level.model';
+import { StageConfig } from '../shared/models/level.model';
 import { Tile } from '../shared/models/tile.model';
+import { ApiService } from '../shared/services/api.service';
 
 @Component({
   selector: 'game',
@@ -19,11 +18,13 @@ export class Game implements OnInit {
   board: Tile[][] = [];
   flatBoard: Tile[] = [];
 
-  levelConfig: LevelConfig = {} as LevelConfig;
+  stageConfig: StageConfig = {} as StageConfig;
 
   inputType: InputType = InputType.Fill;
 
   boardAnnotation: BoardAnnotation = {} as BoardAnnotation;
+
+  gameWon = false;
 
   private startCoords?: Coords;
 
@@ -32,32 +33,50 @@ export class Game implements OnInit {
   private columns: Tile[][] = [];
   private levelMapColumns: number[][] = [];
 
-  outputImg?: any;
-
   get InputType() {
     return InputType;
   }
 
   get boardHeight(): number {
-    return this.levelConfig.levelMap[0].length;
+    return this.stageConfig.boardHeight;
   }
   get boardWidth(): number {
-    return this.levelConfig.levelMap.length;
+    return this.stageConfig.boardWidth;
   }
   get levelMap(): number[][] {
-    return this.levelConfig.levelMap;
+    return this.stageConfig.levelMap;
   }
 
-  constructor() {}
+  constructor(private route: ActivatedRoute, private apiService: ApiService) { }
 
   ngOnInit(): void {
-    // this.levelConfig = test;
+    // this.stageConfig = test;
 
-    this.generateBoard();
-    this.generateAnnotations();
+    const levelFile = this.route.snapshot.params['levelFile'];
+    const levelStage = this.route.snapshot.params['levelStage'];
 
-    this.runAnnotationCheck();
-    this.runAutofill();
+    this.apiService.getLevelFile(levelFile)
+      .subscribe(level => {
+        this.stageConfig = {
+          ...level,
+          levelMap: level.levelMap[levelStage],
+        }
+        // this.stageConfig = {
+        //   boardWidth: 3,
+        //   boardHeight: 3,
+        //   levelMap: [
+        //     [0,0,0],
+        //     [0,1,0],
+        //     [0,0,0],
+        //   ],
+        // }
+
+        this.generateBoard();
+        this.generateAnnotations();
+    
+        this.runAnnotationCheck();
+        this.runAutofill();
+      });
   }
 
   startDrawingShape($event: MouseEvent, tile: Tile): void {
@@ -107,6 +126,8 @@ export class Game implements OnInit {
     this.runCleanPreview();
     this.runAnnotationCheck();
     this.runAutofill();
+
+    this.checkGameWonState();
 
     delete this.startTile;
     delete this.startCoords;
@@ -187,22 +208,28 @@ export class Game implements OnInit {
   private runAutofill(): void {
     this.boardAnnotation.columns.forEach((column, i) => {
       if (column.every((x) => x.done)) {
-        this.columns[i].forEach(tile => {
-            if (!tile.isError && tile.type === InputType.Empty) {
-                tile.isEmpty = true;
-            }
+        this.columns[i].forEach((tile) => {
+          if (!tile.isError && tile.type === InputType.Empty) {
+            tile.isEmpty = true;
+          }
         });
       }
     });
     this.boardAnnotation.rows.forEach((row, i) => {
       if (row.every((x) => x.done)) {
-        this.board[i].forEach(tile => {
-            if (!tile.isError && tile.type === InputType.Empty) {
-                tile.isEmpty = true;
-            }
+        this.board[i].forEach((tile) => {
+          if (!tile.isError && tile.type === InputType.Empty) {
+            tile.isEmpty = true;
+          }
         });
       }
     });
+  }
+
+  private checkGameWonState() {
+    if(this.boardAnnotation.rows.every(x => x.every(y => y.done))) {
+      this.gameWon = true;
+    }
   }
 
   private generateBoard(): void {

@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { chunk, flatMap } from 'lodash-es';
 import { debounceTime, merge } from 'rxjs';
+import { ApiService } from '../shared/services/api.service';
 
 @Component({
   selector: 'level-builder',
@@ -40,7 +41,10 @@ export class LevelBuilder {
 
   @ViewChild('canvasPreview', { static: true }) canvasPreview?: ElementRef<any>;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private apiService: ApiService
+    ) {
     this.createForm();
   }
 
@@ -52,7 +56,7 @@ export class LevelBuilder {
     this.generateLevelPreview();
   }
 
-  private handleBundle() {}
+  private handleBundle() { }
 
   private generateLevelPreview() {
     if (!(this.file && this.width.value && this.height.value)) {
@@ -217,18 +221,29 @@ export class LevelBuilder {
       .subscribe(() => this.generateLevelPreview());
   }
 
-  downloadLevel() {
+  generateLevel() {
+    this.apiService.createLevel(this.finalLevelData)
+      .subscribe(res => {
+        console.log(res)
+      })
+  }
+
+  downloadLevelJson() {
     var dataStr =
       'data:text/json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify({
-        name: this.name.value,
-        ...this.generatedLevel,
-      }));
+      encodeURIComponent(JSON.stringify(this.finalLevelData));
     var downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute('href', dataStr);
     downloadAnchorNode.setAttribute('download', (this.name.value || 'custom-level') + '.json');
-    document.body.appendChild(downloadAnchorNode); // required for firefox
+    document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+  }
+
+  get finalLevelData() {
+    return {
+      name: this.name.value || 'Custom Level',
+      ...this.generatedLevel,
+    };
   }
 }

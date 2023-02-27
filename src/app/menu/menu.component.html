@@ -4,7 +4,15 @@
             Level Builder
         </button>
     </div>
+    <div *ngIf="errorMessage">
+        {{ errorMessage }}
+    </div>
     <div class="level-selector">
-
+        <div *ngFor="let level of levels"
+             class="level">
+            <a [routerLink]="['/game', level.levelFile]">
+                {{ level.levelName | titlecase }}
+            </a>
+        </div>
     </div>
 </div>
